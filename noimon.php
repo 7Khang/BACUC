@@ -9,7 +9,7 @@ require 'db.php';
 // Xử lý các hành động POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Thêm câu hỏi mới
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question'])) {
+    if (isset($_POST['add_question'])) {
         $question = trim($_POST['question']);
         $answer = trim($_POST['answer']);
         $contributor = $_SESSION['username']; // Lấy tên người dùng hiện tại
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Xử lý sửa câu hỏi
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id']) && $_SESSION['role'] === 'admin') {
+    if (isset($_POST['edit_id']) && $_SESSION['role'] === 'admin') {
         $edit_id = $_POST['edit_id'];
         $edit_question = trim($_POST['edit_question']);
         $edit_answer = trim($_POST['edit_answer']);
@@ -277,19 +277,6 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <?php endif; ?>
                             >
                                 <?php echo htmlspecialchars($question['question']); ?>
-                            </td>
-                            <td 
-                                <?php if ($_SESSION['role'] === 'admin'): ?> 
-                                    contenteditable="true" 
-                                    class="editable" 
-                                    data-field="answer"
-                                <?php endif; ?>
-                            >
-                                <?php 
-                                echo !empty($question['answer']) 
-                                    ? htmlspecialchars($question['answer']) 
-                                    : '<em class="no-answer">Chưa có câu trả lời.</em>'; 
-                                ?>
                             </td>
                             <td class="center-align"><?php echo htmlspecialchars($question['contributor'] ?? 'Ẩn danh'); ?></td>
                             <?php if ($_SESSION['role'] === 'admin'): ?>
