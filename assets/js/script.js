@@ -2,20 +2,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hàm lọc nhanh câu hỏi theo từ khóa
     function filterQuestions() {
         const searchInput = document.getElementById('search-input');
-        if (!searchInput) return; // Kiểm tra xem ô tìm kiếm có tồn tại không
+        if (!searchInput) return;
 
-        const searchValue = searchInput.value.toLowerCase();
-        console.log("Từ khóa tìm kiếm:", searchValue);
-
+        const searchTerm = searchInput.value.toLowerCase();
         const rows = document.querySelectorAll('#question-table tbody tr');
-        console.log("Số hàng trong bảng:", rows.length);
 
         rows.forEach(row => {
-            const questionText = row.getAttribute('data-question');
-            if (questionText && questionText.includes(searchValue)) {
-                row.style.display = ''; // Hiển thị hàng nếu phù hợp
+            const questionText = row.getAttribute('data-question') || '';
+            const answerText = row.querySelector('td:nth-child(3)')?.innerText.toLowerCase() || '';
+
+            if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
+                row.style.display = '';
             } else {
-                row.style.display = 'none'; // Ẩn hàng nếu không phù hợp
+                row.style.display = 'none';
             }
         });
     }
@@ -26,143 +25,110 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', filterQuestions);
     }
 
-    // Xử lý hamburger menu
-    const hamburger = document.querySelector('.hamburger');
-    const menu = document.querySelector('.menu ul');
-
-    if (hamburger && menu) {
-        hamburger.addEventListener('click', () => {
-            menu.classList.toggle('active');
+    // Toggle form thêm câu hỏi
+    const toggleButton = document.getElementById('toggle-add-question');
+    const addQuestionContainer = document.getElementById('add-question-container');
+    if (toggleButton && addQuestionContainer) {
+        toggleButton.addEventListener('click', () => {
+            if (addQuestionContainer.classList.contains('visible')) {
+                addQuestionContainer.classList.remove('visible');
+                setTimeout(() => {
+                    addQuestionContainer.style.display = 'none';
+                }, 500);
+            } else {
+                addQuestionContainer.style.display = 'block';
+                setTimeout(() => {
+                    addQuestionContainer.classList.add('visible');
+                }, 10);
+            }
         });
     }
 
-    // Xác nhận trước khi xóa
-    const deleteLinks = document.querySelectorAll('a[href*="delete_question.php"]');
-    deleteLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
-            if (!confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
-                e.preventDefault(); // Ngăn chặn hành động xóa nếu người dùng hủy
-            }
-        });
-    });
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleButton = document.getElementById('toggle-add-question');
-    const addQuestionContainer = document.getElementById('add-question-container');
+    // Xử lý form thêm câu hỏi qua AJAX
+    const form = document.getElementById('add-question-form');
+    const tableBody = document.querySelector('#question-table tbody');
+    if (form && tableBody) {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-    toggleButton.addEventListener('click', () => {
-        if (addQuestionContainer.style.display === 'none' || addQuestionContainer.style.display === '') {
-            addQuestionContainer.style.display = 'block';
-        } else {
-            addQuestionContainer.style.display = 'none';
-        }
-    });
-});
+            const formData = new FormData(form);
 
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleButton = document.getElementById('toggle-add-question');
-    const addQuestionContainer = document.getElementById('add-question-container');
-
-    toggleButton.addEventListener('click', () => {
-        if (addQuestionContainer.classList.contains('visible')) {
-            addQuestionContainer.classList.remove('visible');
-            setTimeout(() => {
-                addQuestionContainer.style.display = 'none';
-            }, 500); // Thời gian chờ để hoàn thành hiệu ứng mờ dần
-        } else {
-            addQuestionContainer.style.display = 'block';
-            setTimeout(() => {
-                addQuestionContainer.classList.add('visible');
-            }, 10); // Đợi DOM cập nhật trước khi thêm class
-        }
-    });
-
-    // Kiểm tra dữ liệu trước khi gửi
-    document.querySelector('.add-question-form').addEventListener('submit', function (e) {
-        const question = document.getElementById('question').value.trim();
-        const answer = document.getElementById('answer').value.trim();
-    
-        if (!question || !answer) {
-            e.preventDefault(); // Ngăn chặn gửi form nếu dữ liệu trống
-            alert("Vui lòng nhập đầy đủ câu hỏi và đáp án.");
-        }
-    });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    const editableCells = document.querySelectorAll(".editable");
-
-    editableCells.forEach(cell => {
-        cell.addEventListener("blur", function () {
-            const questionId = cell.closest(".question-row").getAttribute("data-id");
-            const field = cell.getAttribute("data-field");
-            const newValue = cell.textContent.trim();
-
-            if (newValue) {
-                fetch("update_question.php", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        id: questionId,
-                        field: field,
-                        value: newValue
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("Cập nhật thành công!");
-                    } else {
-                        alert("Lỗi khi cập nhật: " + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error("Lỗi:", error);
-                    alert("Lỗi khi cập nhật.");
+            try {
+                const response = await fetch('/qa-system/noimon.php', {
+                    method: 'POST',
+                    body: formData
                 });
-            } else {
-                alert("Vui lòng nhập nội dung.");
-            }
-        });
-    });
-});
 
-document.addEventListener('DOMContentLoaded', () => {
-    const editableCells = document.querySelectorAll('.editable');
-
-    editableCells.forEach(cell => {
-        cell.addEventListener('blur', async () => {
-            console.log('Nội dung ô:', cell.innerText); // Debug: Kiểm tra nội dung ô
-        });
-    });
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('search-input');
-    const rows = document.querySelectorAll('#question-table tbody tr');
-
-    searchInput.addEventListener('input', () => {
-        const searchTerm = searchInput.value.toLowerCase();
-
-        rows.forEach(row => {
-            const questionCell = row.querySelector('td:first-child');
-            const answerCell = row.querySelector('td:nth-child(2)');
-
-            if (questionCell && answerCell) {
-                const questionText = questionCell.innerText.toLowerCase();
-                const answerText = answerCell.innerText.toLowerCase();
-
-                if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
-                    row.style.display = ''; // Hiển thị dòng
-                } else {
-                    row.style.display = 'none'; // Ẩn dòng
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
+
+                const text = await response.text();
+                let data;
+
+                try {
+                    data = JSON.parse(text);
+                } catch (error) {
+                    console.error('Phản hồi không phải là JSON:', text);
+                    alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                    return;
+                }
+
+                if (data.success) {
+                    const newRow = document.createElement('tr');
+                    newRow.classList.add('question-row');
+                    newRow.setAttribute('data-id', data.data.id);
+                    newRow.innerHTML = `
+                        <td class="serial-number">${tableBody.children.length + 1}</td>
+                        <td>${data.data.question}</td>
+                        <td>${data.data.answer || 'Chưa có câu trả lời.'}</td>
+                        <td class="center-align">${data.data.contributor}</td>
+                        ${data.data.status === 'pending' ? `
+                            <td class="actions">
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn duyệt câu hỏi này?');">
+                                    <input type="hidden" name="approve_id" value="${data.data.id}">
+                                    <button type="submit" class="approve-button">Duyệt</button>
+                                </form>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">
+                                    <input type="hidden" name="delete_id" value="${data.data.id}">
+                                    <button type="submit" class="delete-button">Xóa</button>
+                                </form>
+                            </td>
+                        ` : ''}
+                    `;
+                    tableBody.appendChild(newRow);
+                    alert(data.message);
+                    form.reset();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi thêm câu hỏi.');
             }
         });
+    }
+    fetch('/qa-system/noimon.php', { // Hoặc '/qa-system/noimon.php'
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('Server responded with status:', response.status);
+            throw new Error('Network response was not ok');
+        }
+        return response.text(); // Nhận phản hồi dưới dạng text
+    })
+    .then(text => {
+        console.log('Raw response:', text); // Kiểm tra phản hồi thô
+        try {
+            const data = JSON.parse(text); // Thử parse JSON
+            console.log('Parsed data:', data);
+        } catch (error) {
+            console.error('Phản hồi không phải là JSON:', text);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
     });
 });
-
-
-
-

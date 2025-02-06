@@ -1,4 +1,14 @@
 <?php
+session_start();
+
+if ($_SESSION['role'] !== 'admin') {
+    echo json_encode(["success" => false, "error" => "Bạn không có quyền thực hiện hành động này."]);
+    exit;
+}
+
+// Tiếp tục xử lý request...
+?>
+<?php
 header("Content-Type: application/json");
 
 // Kết nối database

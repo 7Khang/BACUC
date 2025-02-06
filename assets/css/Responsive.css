@@ -1,0 +1,81 @@
+/* Responsive Design */
+@media (max-width: 768px) {
+    .split-container {
+    flex-direction: column; /* Chuyển thành cột trên thiết bị nhỏ */
+    }
+    .split-container .section {
+    width: 100%; /* Chiếm toàn bộ chiều rộng */
+    height: auto; /* Chiều cao tự động */
+    }
+}
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Ẩn cột "Người Đóng Góp" trên màn hình nhỏ */
+    .question-table th:nth-child(4),
+    .question-table td:nth-child(4) {
+    display: none;
+    }
+}
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Giảm kích thước font cho toàn bộ trang */
+    body {
+    font-size: 14px; /* Giảm kích thước chữ mặc định */
+    }
+    /* Điều chỉnh bảng xếp hạng */
+    .leaderboard h2 {
+    font-size: 20px; /* Giảm kích thước tiêu đề */
+    }
+    .podium-container {
+    align-items: center;
+    gap: 10px; /* Khoảng cách giữa các hạng */
+    }
+    .podium-item {
+    padding: 10px; /* Giảm padding */
+    transform: none; /* Loại bỏ hiệu ứng scale */
+    }
+    .podium-item .rank {
+    font-size: 36px; /* Giảm kích thước số hạng */
+    }
+    .podium-item .contributor h3 {
+    font-size: 16px; /* Giảm kích thước tên người đóng góp */
+    }
+    .podium-item .contributor p {
+    font-size: 12px; /* Giảm kích thước số câu hỏi */
+    }
+    /* Điều chỉnh bảng câu hỏi */
+    .question-table {
+    font-size: 12px; /* Giảm kích thước chữ trong bảng */
+    }
+    .question-table th,
+    .question-table td {
+    padding: 6px 8px; /* Giảm padding trong ô bảng */
+    }
+    /* Điều chỉnh nút và form */
+    .button,
+    .submit-button,
+    #toggle-add-question {
+    font-size: 12px; /* Giảm kích thước chữ trên nút */
+    padding: 8px 12px; /* Giảm padding */
+    }
+    /* Điều chỉnh input tìm kiếm */
+    #search-input {
+    font-size: 12px; /* Giảm kích thước chữ trong ô tìm kiếm */
+    padding: 8px; /* Giảm padding */
+    }
+}
+/* Định dạng cột số thứ tự */
+.question-table th:first-child,
+.question-table td.serial-number {
+    width: 40px; /* Giới hạn độ rộng */
+    text-align: center; /* Căn giữa nội dung */
+    padding: 8px; /* Giảm padding để tiết kiệm không gian */
+}
+/* Responsive Design */
+@media (max-width: 768px) {
+    .question-table th:first-child,
+    .question-table td.serial-number {
+    width: 30px; /* Thu nhỏ hơn trên màn hình nhỏ */
+    font-size: 12px; /* Giảm kích thước chữ */
+    }
+}

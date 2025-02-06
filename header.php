@@ -1,6 +1,5 @@
 <?php
-// Bắt đầu session và kiểm tra đăng nhập
-session_start();
+
 // Kiểm tra xem người dùng đã đăng nhập chưa
 if (!isset($_SESSION['role'])) {
     // Nếu chưa đăng nhập, chuyển hướng về trang đăng nhập
@@ -16,6 +15,7 @@ if (!isset($_SESSION['role'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? $page_title : 'Bổ Thiên Các'; ?></title>
     <link rel="stylesheet" href="assets/css/noimon.css">
+    <link rel="stylesheet" href="assets/css/Responsive.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
