@@ -552,6 +552,11 @@ table td {
     border: 1px solid #d9c893;
 }
 
+.question-table td .pending-label {
+    top: 5px;
+    right: 10px;
+}
+
 .question-table th {
     background: #d9c893;
     color: #1c1c1c;
@@ -561,6 +566,7 @@ table td {
 
 .question-table td {
     vertical-align: middle;
+    position: relative; /* Cho phép định vị con bên trong */
 }
 
 .question-table tr:nth-child(even) {
@@ -733,6 +739,28 @@ td:not(.editable) {
     transform: scale(1.05);
     box-shadow: 0 8px 20px rgba(217, 200, 147, 0.5);
 }
+
+
+/* Hiệu ứng làm mờ cho câu hỏi đang chờ duyệt */
+.pending {
+    opacity: 0.7; /* Làm mờ nội dung */
+    position: relative;
+}
+
+/* Nhãn "ĐANG CHỜ DUYỆT" */
+.pending-label {
+    position: absolute; /* Định vị tuyệt đối so với ô cha */
+    top: 5px; /* Khoảng cách từ trên xuống */
+    right: 10px; /* Khoảng cách từ phải sang */
+    background-color: #ff4d4d; /* Màu đỏ nhạt */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 1; /* Đảm bảo nhãn hiển thị trên nội dung khác */
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

@@ -78,71 +78,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Kiểm tra dữ liệu trước khi gửi
-    document.querySelector('.add-question-form').addEventListener('submit', (e) => {
+    document.querySelector('.add-question-form').addEventListener('submit', function (e) {
         const question = document.getElementById('question').value.trim();
         const answer = document.getElementById('answer').value.trim();
-
+    
         if (!question || !answer) {
-            e.preventDefault(); // Ngăn chặn gửi form
-            alert('Vui lòng nhập đầy đủ câu hỏi và đáp án!');
+            e.preventDefault(); // Ngăn chặn gửi form nếu dữ liệu trống
+            alert("Vui lòng nhập đầy đủ câu hỏi và đáp án.");
         }
     });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const editableCells = document.querySelectorAll('.editable');
-    const searchInput = document.getElementById('search-input');
-    const rows = document.querySelectorAll('#question-table tbody tr');
+document.addEventListener("DOMContentLoaded", function () {
+    const editableCells = document.querySelectorAll(".editable");
 
     editableCells.forEach(cell => {
-        cell.addEventListener('blur', async () => {
-            const row = cell.closest('tr');
-            const questionId = row.getAttribute('data-id');
-            const field = cell.getAttribute('data-field');
-            const newValue = cell.innerText.trim();
+        cell.addEventListener("blur", function () {
+            const questionId = cell.closest(".question-row").getAttribute("data-id");
+            const field = cell.getAttribute("data-field");
+            const newValue = cell.textContent.trim();
 
-            // Gửi yêu cầu cập nhật lên server
-            const response = await fetch('update_question.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    id: questionId,
-                    field: field,
-                    value: newValue
+            if (newValue) {
+                // Gửi dữ liệu lên server bằng AJAX
+                fetch("update_question.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: questionId,
+                        field: field,
+                        value: newValue
+                    })
                 })
-            });
-
-            if (response.ok) {
-                console.log('Cập nhật thành công!');
-            } else {
-                console.error('Cập nhật thất bại.');
-            }
-
-            // Cập nhật lại dữ liệu trong DOM
-            cell.innerText = newValue;
-
-            // Thực hiện tìm kiếm lại
-            const searchTerm = searchInput.value.toLowerCase();
-            rows.forEach(row => {
-                const questionCell = row.querySelector('td:first-child');
-                const answerCell = row.querySelector('td:nth-child(2)');
-
-                if (questionCell && answerCell) {
-                    const questionText = questionCell.innerText.toLowerCase();
-                    const answerText = answerCell.innerText.toLowerCase();
-
-                    if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
-                        row.style.display = '';
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Cập nhật thành công!");
                     } else {
-                        row.style.display = 'none';
+                        alert("Lỗi khi cập nhật.");
                     }
-                }
-            });
+                })
+                .catch(error => {
+                    console.error("Lỗi:", error);
+                    alert("Lỗi khi cập nhật.");
+                });
+            } else {
+                alert("Vui lòng nhập nội dung.");
+            }
         });
     });
 });
+
 document.addEventListener('DOMContentLoaded', () => {
     const editableCells = document.querySelectorAll('.editable');
 
@@ -176,5 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+
 
 

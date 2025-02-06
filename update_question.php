@@ -1,29 +1,37 @@
 <?php
-session_start();
+header("Content-Type: application/json");
 
-// Kiểm tra vai trò của người dùng
-if ($_SESSION['role'] !== 'admin') {
-    http_response_code(403); // Forbidden
-    exit;
-}
+// Kết nối database
+require_once "db_connection.php";
 
-// Kết nối cơ sở dữ liệu
-require 'db.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents("php://input"), true);
 
-// Nhận dữ liệu từ request
-$data = json_decode(file_get_contents('php://input'), true);
-$id = $data['id'];
-$field = $data['field'];
-$value = $data['value'];
+    $id = $data['id'];
+    $field = $data['field'];
+    $value = trim($data['value']);
 
-// Cập nhật dữ liệu trong cơ sở dữ liệu
-$stmt = $pdo->prepare("UPDATE questions SET $field = ? WHERE id = ?");
-$stmt->execute([$value, $id]);
+    if (!empty($id) && !empty($field) && !empty($value)) {
+        try {
+            // Cập nhật trường tương ứng trong cơ sở dữ liệu
+            $stmt = $pdo->prepare("
+                UPDATE questions
+                SET $field = :value
+                WHERE id = :id
+            ");
+            $stmt->execute([
+                ':value' => htmlspecialchars($value),
+                ':id' => $id
+            ]);
 
-// Trả về phản hồi
-if ($stmt->rowCount() > 0) {
-    echo json_encode(['status' => 'success']);
+            echo json_encode(["success" => true]);
+        } catch (Exception $e) {
+            echo json_encode(["success" => false, "error" => $e->getMessage()]);
+        }
+    } else {
+        echo json_encode(["success" => false, "error" => "Dữ liệu không hợp lệ."]);
+    }
 } else {
-    echo json_encode(['status' => 'error']);
+    echo json_encode(["success" => false, "error" => "Phương thức không hợp lệ."]);
 }
 ?>

@@ -9,23 +9,36 @@ require 'db.php';
 // Xử lý các hành động POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Thêm câu hỏi mới
-    if (isset($_POST['add_question'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question'])) {
         $question = trim($_POST['question']);
         $answer = trim($_POST['answer']);
-        $contributor = $_SESSION['username'] ?? 'Ẩn danh';
-
+        $contributor = $_SESSION['username']; // Lấy tên người dùng hiện tại
+    
         if (!empty($question)) {
             try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO questions (question, answer, contributor, status)
-                    VALUES (:question, :answer, :contributor, 'pending')
-                ");
-                $stmt->execute([
-                    ':question' => htmlspecialchars($question),
-                    ':answer' => htmlspecialchars($answer),
-                    ':contributor' => $contributor
-                ]);
-                echo "<p>Câu hỏi của bạn đã được gửi và đang chờ admin duyệt.</p>";
+                // Kiểm tra xem câu hỏi đã tồn tại chưa
+                $stmt = $pdo->prepare("SELECT id FROM questions WHERE question = :question");
+                $stmt->execute([':question' => $question]);
+                $existingQuestion = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+                if ($existingQuestion) {
+                    echo "<p>Câu hỏi này đã tồn tại. Vui lòng thêm câu hỏi khác.</p>";
+                } else {
+                    // Thêm câu hỏi mới
+                    $stmt = $pdo->prepare("
+                        INSERT INTO questions (question, answer, contributor, status)
+                        VALUES (:question, :answer, :contributor, 'pending')
+                    ");
+                    $stmt->execute([
+                        ':question' => htmlspecialchars($question),
+                        ':answer' => htmlspecialchars($answer),
+                        ':contributor' => $contributor
+                    ]);
+    
+                    // Chuyển hướng để tránh gửi lại form
+                    header("Location: noimon.php");
+                    exit;
+                }
             } catch (Exception $e) {
                 echo "<p>Lỗi khi thêm câu hỏi: " . htmlspecialchars($e->getMessage()) . "</p>";
             }
@@ -34,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Duyệt câu hỏi (chỉ admin có thể thực hiện)
+    // Duyệt câu hỏi
     if (isset($_POST['approve_id']) && $_SESSION['role'] === 'admin') {
         $approveId = $_POST['approve_id'];
         $stmt = $pdo->prepare("
@@ -46,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<p>Câu hỏi đã được duyệt.</p>";
     }
 
-    // Xóa câu hỏi (chỉ admin có thể thực hiện)
+    // Xóa câu hỏi
     if (isset($_POST['delete_id']) && $_SESSION['role'] === 'admin') {
         $deleteId = $_POST['delete_id'];
         $stmt = $pdo->prepare("
@@ -57,27 +70,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<p>Câu hỏi đã bị xóa.</p>";
     }
 
-    // Sửa câu hỏi (chỉ admin có thể thực hiện)
-    if (isset($_POST['edit_id']) && $_SESSION['role'] === 'admin') {
+    // Sửa câu hỏi
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id']) && $_SESSION['role'] === 'admin') {
         $edit_id = $_POST['edit_id'];
         $edit_question = trim($_POST['edit_question']);
         $edit_answer = trim($_POST['edit_answer']);
-
+    
+        // Kiểm tra câu hỏi có tồn tại không
+        $stmt = $pdo->prepare("SELECT id FROM questions WHERE id = :id");
+        $stmt->execute([':id' => $edit_id]);
+        $existingQuestion = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$existingQuestion) {
+            echo "<p>Câu hỏi không tồn tại.</p>";
+            exit;
+        }
+    
         if (!empty($edit_question)) {
-            $stmt = $pdo->prepare("
-                UPDATE questions
-                SET question = :question, answer = :answer
-                WHERE id = :id
-            ");
-            $stmt->execute([
-                ':question' => htmlspecialchars($edit_question),
-                ':answer' => htmlspecialchars($edit_answer),
-                ':id' => $edit_id
-            ]);
-            echo "<p>Câu hỏi đã được cập nhật.</p>";
+            try {
+                // Cập nhật câu hỏi và đáp án
+                $stmt = $pdo->prepare("
+                    UPDATE questions
+                    SET question = :question, answer = :answer
+                    WHERE id = :id
+                ");
+                $stmt->execute([
+                    ':question' => htmlspecialchars($edit_question),
+                    ':answer' => htmlspecialchars($edit_answer),
+                    ':id' => $edit_id
+                ]);
+    
+                echo "<p>Câu hỏi đã được cập nhật thành công.</p>";
+            } catch (Exception $e) {
+                echo "<p>Lỗi khi cập nhật câu hỏi: " . htmlspecialchars($e->getMessage()) . "</p>";
+            }
         } else {
             echo "<p>Vui lòng nhập câu hỏi.</p>";
         }
+    
+        // Chuyển hướng để tránh gửi lại form
+        header("Location: noimon.php");
+        exit;
+    } else {
+        echo "<p>Bạn không có quyền thực hiện hành động này.</p>";
     }
 }
 
@@ -89,7 +124,7 @@ $query = "
             WHEN status = 'pending' THEN 0 
             ELSE 1 
         END,
-        created_at DESC
+        question ASC
 ";
 
 if ($_SESSION['role'] !== 'admin') {
@@ -120,7 +155,46 @@ $stmt = $pdo->query("
     LIMIT 3
 ");
 $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Kiểm tra vai trò người dùng
+$is_admin = ($_SESSION['role'] === 'admin');
+$current_user = $_SESSION['username'] ?? 'Ẩn danh';
+
+// Truy vấn danh sách câu hỏi
+if ($_SESSION['role'] === 'admin') {
+    // Admin có thể xem tất cả câu hỏi
+    $query = "
+        SELECT * FROM questions
+        ORDER BY 
+            CASE 
+                WHEN status = 'pending' THEN 0 
+                ELSE 1 
+            END,
+            question ASC
+    ";
+} else {
+    // Người dùng thường chỉ xem câu hỏi đã duyệt hoặc câu hỏi của chính họ
+    $current_user = $_SESSION['username'] ?? 'Ẩn danh';
+    $query = "
+        SELECT * FROM questions
+        WHERE status = 'approved' OR contributor = :current_user
+        ORDER BY 
+            CASE 
+                WHEN status = 'pending' THEN 0 
+                ELSE 1 
+            END,
+            question ASC
+    ";
+}
+$stmt = $pdo->prepare($query);
+if ($_SESSION['role'] !== 'admin') {
+    $stmt->execute([':current_user' => $current_user]);
+} else {
+    $stmt->execute();
+}
+$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 
 <!DOCTYPE html>
@@ -175,7 +249,7 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <table class="question-table" id="question-table">
             <thead>
                 <tr>
-                    <th>#</th> <!-- Số thứ tự -->
+                    <th>#</th>
                     <th>Câu Hỏi</th>
                     <th>Câu Trả Lời</th>
                     <th>Người Đóng Góp</th>
@@ -188,9 +262,9 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php if (!empty($questions)): ?>
                     <?php foreach ($questions as $index => $question): ?>
                         <tr class="question-row" data-id="<?php echo htmlspecialchars($question['id']); ?>">
-                            <td class="serial-number"><?php echo $index + 1; ?></td> <!-- Số thứ tự -->
+                            <td class="serial-number"><?php echo $index + 1; ?></td>
                             <td 
-                                <?php if ($_SESSION['role'] === 'admin' && $question['status'] === 'approved'): ?> 
+                                <?php if ($_SESSION['role'] === 'admin'): ?> 
                                     contenteditable="true" 
                                     class="editable" 
                                     data-field="question"
@@ -202,7 +276,7 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <?php endif; ?>
                             </td>
                             <td 
-                                <?php if ($_SESSION['role'] === 'admin' && $question['status'] === 'approved'): ?> 
+                                <?php if ($_SESSION['role'] === 'admin'): ?> 
                                     contenteditable="true" 
                                     class="editable" 
                                     data-field="answer"
@@ -253,13 +327,27 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <form method="POST" action="" class="add-question-form">
                 <div class="form-group">
                     <label for="question">Câu Hỏi:</label>
-                    <input type="text" name="question" id="question" placeholder="Mời đạo hữu nhập câu hỏi vào đây..." required>
+                    <input 
+                        type="text" 
+                        name="question" 
+                        id="question" 
+                        placeholder="Mời đạo hữu nhập câu hỏi vào đây..." 
+                        required 
+                        maxlength="255"
+                    >
                 </div>
                 <div class="form-group">
                     <label for="answer">Đáp Án:</label>
-                    <input type="text" name="answer" id="answer" placeholder="Mời đạo hữu nhập đáp án vào đây..." required>
+                    <input 
+                        type="text" 
+                        name="answer" 
+                        id="answer" 
+                        placeholder="Mời đạo hữu nhập đáp án vào đây..." 
+                        required 
+                        maxlength="255"
+                    >
                 </div>
-                <button type="submit" class="submit-button">BỔ SUNG</button>
+                <button type="submit" name="add_question" class="submit-button">BỔ SUNG</button>
             </form>
         </div>
     </div>
