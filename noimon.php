@@ -70,24 +70,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<p>Câu hỏi đã bị xóa.</p>";
     }
 
-    // Sửa câu hỏi
+    // Xử lý sửa câu hỏi
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id']) && $_SESSION['role'] === 'admin') {
         $edit_id = $_POST['edit_id'];
         $edit_question = trim($_POST['edit_question']);
         $edit_answer = trim($_POST['edit_answer']);
     
-        // Kiểm tra câu hỏi có tồn tại không
-        $stmt = $pdo->prepare("SELECT id FROM questions WHERE id = :id");
-        $stmt->execute([':id' => $edit_id]);
-        $existingQuestion = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-        if (!$existingQuestion) {
-            echo "<p>Câu hỏi không tồn tại.</p>";
-            exit;
-        }
-    
         if (!empty($edit_question)) {
             try {
+                // Kiểm tra câu hỏi có tồn tại không
+                $stmt = $pdo->prepare("SELECT id FROM questions WHERE id = :id");
+                $stmt->execute([':id' => $edit_id]);
+                $existingQuestion = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+                if (!$existingQuestion) {
+                    echo json_encode(["success" => false, "error" => "Câu hỏi không tồn tại."]);
+                    exit;
+                }
+    
                 // Cập nhật câu hỏi và đáp án
                 $stmt = $pdo->prepare("
                     UPDATE questions
@@ -100,19 +100,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':id' => $edit_id
                 ]);
     
-                echo "<p>Câu hỏi đã được cập nhật thành công.</p>";
+                echo json_encode(["success" => true]);
             } catch (Exception $e) {
-                echo "<p>Lỗi khi cập nhật câu hỏi: " . htmlspecialchars($e->getMessage()) . "</p>";
+                echo json_encode(["success" => false, "error" => $e->getMessage()]);
             }
         } else {
-            echo "<p>Vui lòng nhập câu hỏi.</p>";
+            echo json_encode(["success" => false, "error" => "Vui lòng nhập câu hỏi."]);
         }
-    
-        // Chuyển hướng để tránh gửi lại form
-        header("Location: noimon.php");
-        exit;
     } else {
-        echo "<p>Bạn không có quyền thực hiện hành động này.</p>";
+        echo json_encode(["success" => false, "error" => "Bạn không có quyền thực hiện hành động này."]);
     }
 }
 
@@ -264,6 +260,16 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tr class="question-row" data-id="<?php echo htmlspecialchars($question['id']); ?>">
                             <td class="serial-number"><?php echo $index + 1; ?></td>
                             <td 
+                                contenteditable="true" 
+                                class="editable" 
+                                data-field="question"
+                            >
+                                <?php echo htmlspecialchars($question['question']); ?>
+                            </td>
+                            <?php if ($question['status'] === 'pending'): ?>
+                                <span class="pending-label">(Chờ Duyệt)</span>
+                            <?php endif; ?>
+                            <td 
                                 <?php if ($_SESSION['role'] === 'admin'): ?> 
                                     contenteditable="true" 
                                     class="editable" 
@@ -271,9 +277,6 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <?php endif; ?>
                             >
                                 <?php echo htmlspecialchars($question['question']); ?>
-                                <?php if ($question['status'] === 'pending'): ?>
-                                    <span class="pending-label">(Chờ Duyệt)</span>
-                                <?php endif; ?>
                             </td>
                             <td 
                                 <?php if ($_SESSION['role'] === 'admin'): ?> 

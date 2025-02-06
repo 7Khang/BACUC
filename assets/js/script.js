@@ -99,7 +99,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const newValue = cell.textContent.trim();
 
             if (newValue) {
-                // Gửi dữ liệu lên server bằng AJAX
                 fetch("update_question.php", {
                     method: "POST",
                     headers: {
@@ -116,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (data.success) {
                         alert("Cập nhật thành công!");
                     } else {
-                        alert("Lỗi khi cập nhật.");
+                        alert("Lỗi khi cập nhật: " + data.error);
                     }
                 })
                 .catch(error => {

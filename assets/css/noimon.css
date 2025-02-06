@@ -251,12 +251,22 @@ body {
 
 /* Định dạng nhãn "Chờ Duyệt" */
 .pending-label {
-    background: #ff6b6b;
-    color: #ffffff;
+    position: absolute; /* Định vị tuyệt đối so với ô cha */
+    top: 5px; /* Khoảng cách từ trên xuống */
+    right: 10px; /* Khoảng cách từ phải sang */
+    background-color: #ff4d4d; /* Màu đỏ nhạt */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
     font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 10px;
+    font-weight: bold;
+    z-index: 1; /* Đảm bảo nhãn hiển thị trên nội dung khác */
+}
+
+/* Định dạng ô chứa câu hỏi */
+.question-table td {
+    position: relative; /* Cho phép định vị con bên trong */
+    padding-right: 80px; /* Để tránh nhãn chồng lên nội dung */
 }
 
 /* Bảng xếp hạng */
