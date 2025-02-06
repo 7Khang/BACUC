@@ -1,3 +1,49 @@
+<?php
+session_start();
+require 'db.php';
+include 'header.php';
+
+// Kiểm tra nếu người dùng đã đăng nhập
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit;
+}
+
+// Lấy danh sách câu hỏi
+function fetchQuestions($pdo) {
+    $query = "
+        SELECT * FROM questions
+        ORDER BY 
+        CASE 
+        WHEN status = 'pending' THEN 0 
+        ELSE 1 
+        END,
+        question ASC
+    ";
+    if (($_SESSION['role'] ?? '') !== 'admin') {
+        $current_user = $_SESSION['username'] ?? 'Ẩn danh';
+        $query = "
+            SELECT * FROM questions
+            WHERE status = 'approved' OR contributor = :current_user
+            ORDER BY 
+            CASE 
+            WHEN status = 'pending' THEN 0 
+            ELSE 1 
+            END,
+            question ASC
+        ";
+    }
+    $stmt = $pdo->prepare($query);
+    if (($_SESSION['role'] ?? '') !== 'admin') {
+        $stmt->execute([':current_user' => $current_user]);
+    } else {
+        $stmt->execute();
+    }
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$questions = fetchQuestions($pdo);
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,7 +54,6 @@
     <link rel="stylesheet" href="assets/css/Responsive.css">
     <script src="assets/js/sweetalert211.js"></script>
     <script src="assets/js/script.js" defer></script> <!-- Liên kết tệp script.js -->
-
 </head>
 <body>
 <!-- Hero Section -->
@@ -50,7 +95,7 @@
 
         <!-- Danh Sách Câu Hỏi Vấn Đáp -->
         <h3>DANH SÁCH CÂU HỎI VẤN ĐÁP</h3>
-        <table class="question-table" id="question-table">
+        <table class="question-table">
             <thead>
                 <tr>
                     <th>#</th>
@@ -63,55 +108,28 @@
                 </tr>
             </thead>
             <tbody>
-                <?php if (!empty($questions)): ?>
-                    <?php foreach ($questions as $index => $question): ?>
-                        <tr class="question-row" data-id="<?php echo htmlspecialchars($question['id']); ?>">
-                            <td class="serial-number"><?php echo $index + 1; ?></td>
-                            <td 
-                                contenteditable="true" 
-                                class="editable" 
-                                data-field="question"
-                            >
-                                <?php echo htmlspecialchars($question['question']); ?>
-                            </td>
+                <?php foreach ($questions as $index => $question): ?>
+                <tr>
+                    <td><?= $index + 1 ?></td>
+                    <td><?= htmlspecialchars($question['question']) ?></td>
+                    <td><?= htmlspecialchars($question['answer']) ?: 'Chưa có câu trả lời.' ?></td>
+                    <td class="center-align"><?= htmlspecialchars($question['contributor']) ?></td>
+                    <?php if ($_SESSION['role'] === 'admin'): ?>
+                        <td>
                             <?php if ($question['status'] === 'pending'): ?>
-                                <span class="pending-label">(Chờ Duyệt)</span>
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="approve_id" value="<?= $question['id'] ?>">
+                                    <button type="submit" class="approve-button">Duyệt</button>
+                                </form>
                             <?php endif; ?>
-                            <td 
-                                <?php if ($_SESSION['role'] === 'admin'): ?> 
-                                    contenteditable="true" 
-                                    class="editable" 
-                                    data-field="question"
-                                <?php endif; ?>
-                            >
-                                <?php echo htmlspecialchars($question['question']); ?>
-                            </td>
-                            <td class="center-align"><?php echo htmlspecialchars($question['contributor'] ?? 'Ẩn danh'); ?></td>
-                            <?php if ($_SESSION['role'] === 'admin'): ?>
-                                <td class="actions">
-                                    <?php if ($question['status'] === 'pending'): ?>
-                                        <!-- Nút Duyệt -->
-                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn duyệt câu hỏi này?');">
-                                            <input type="hidden" name="approve_id" value="<?php echo $question['id']; ?>">
-                                            <button type="submit" class="approve-button">Duyệt</button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <!-- Nút Xóa -->
-                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">
-                                        <input type="hidden" name="delete_id" value="<?php echo $question['id']; ?>">
-                                        <button type="submit" class="delete-button">Xóa</button>
-                                    </form>
-                                </td>
-                            <?php endif; ?>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="<?php echo $_SESSION['role'] === 'admin' ? 5 : 4; ?>" class="no-data">
-                            Không có câu hỏi nào hiện tại.
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="delete_id" value="<?= $question['id'] ?>">
+                                <button type="submit" class="delete-button">Xóa</button>
+                            </form>
                         </td>
-                    </tr>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
 

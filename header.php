@@ -14,9 +14,8 @@ if (!isset($_SESSION['role'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? $page_title : 'Bổ Thiên Các'; ?></title>
-    <link rel="stylesheet" href="assets/css/noimon.css">
     <link rel="stylesheet" href="assets/css/Responsive.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/header.css">
 </head>
 <body>
 

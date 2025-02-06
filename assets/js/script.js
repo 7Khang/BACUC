@@ -1,134 +1,196 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Hàm lọc nhanh câu hỏi theo từ khóa
-    function filterQuestions() {
-        const searchInput = document.getElementById('search-input');
-        if (!searchInput) return;
+document.addEventListener('DOMContentLoaded', function () {
+    const questionList = document.getElementById('question-list');
 
-        const searchTerm = searchInput.value.toLowerCase();
-        const rows = document.querySelectorAll('#question-table tbody tr');
-
-        rows.forEach(row => {
-            const questionText = row.getAttribute('data-question') || '';
-            const answerText = row.querySelector('td:nth-child(3)')?.innerText.toLowerCase() || '';
-
-            if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
-
-    // Gắn sự kiện cho ô tìm kiếm
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterQuestions);
-    }
-
-    // Toggle form thêm câu hỏi
-    const toggleButton = document.getElementById('toggle-add-question');
-    const addQuestionContainer = document.getElementById('add-question-container');
-    if (toggleButton && addQuestionContainer) {
-        toggleButton.addEventListener('click', () => {
-            if (addQuestionContainer.classList.contains('visible')) {
-                addQuestionContainer.classList.remove('visible');
-                setTimeout(() => {
-                    addQuestionContainer.style.display = 'none';
-                }, 500);
-            } else {
-                addQuestionContainer.style.display = 'block';
-                setTimeout(() => {
-                    addQuestionContainer.classList.add('visible');
-                }, 10);
-            }
-        });
-    }
-
-    // Xử lý form thêm câu hỏi qua AJAX
-    const form = document.getElementById('add-question-form');
-    const tableBody = document.querySelector('#question-table tbody');
-    if (form && tableBody) {
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const formData = new FormData(form);
-
-            try {
-                const response = await fetch('/qa-system/noimon.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const text = await response.text();
-                let data;
-
-                try {
-                    data = JSON.parse(text);
-                } catch (error) {
-                    console.error('Phản hồi không phải là JSON:', text);
-                    alert('Có lỗi xảy ra. Vui lòng thử lại.');
-                    return;
-                }
-
+    // Hàm tải danh sách câu hỏi
+    function loadQuestions() {
+        fetch('noimon.php')
+            .then(response => response.json())
+            .then(data => {
                 if (data.success) {
-                    const newRow = document.createElement('tr');
-                    newRow.classList.add('question-row');
-                    newRow.setAttribute('data-id', data.data.id);
-                    newRow.innerHTML = `
-                        <td class="serial-number">${tableBody.children.length + 1}</td>
-                        <td>${data.data.question}</td>
-                        <td>${data.data.answer || 'Chưa có câu trả lời.'}</td>
-                        <td class="center-align">${data.data.contributor}</td>
-                        ${data.data.status === 'pending' ? `
-                            <td class="actions">
-                                <form method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn duyệt câu hỏi này?');">
-                                    <input type="hidden" name="approve_id" value="${data.data.id}">
-                                    <button type="submit" class="approve-button">Duyệt</button>
-                                </form>
-                                <form method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">
-                                    <input type="hidden" name="delete_id" value="${data.data.id}">
-                                    <button type="submit" class="delete-button">Xóa</button>
-                                </form>
-                            </td>
-                        ` : ''}
-                    `;
-                    tableBody.appendChild(newRow);
-                    alert(data.message);
-                    form.reset();
+                    renderQuestions(data.data); // Hiển thị danh sách câu hỏi
                 } else {
-                    alert(data.message);
+                    console.error('Lỗi khi tải danh sách câu hỏi:', data.message);
                 }
-            } catch (error) {
-                console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi thêm câu hỏi.');
-            }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Hàm hiển thị danh sách câu hỏi lên bảng
+    function renderQuestions(questions) {
+        questionList.innerHTML = ''; // Xóa dữ liệu cũ
+
+        if (questions.length === 0) {
+            questionList.innerHTML = '<tr><td colspan="5">Không có câu hỏi nào hiện tại.</td></tr>';
+            return;
+        }
+
+        questions.forEach((question, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td 
+                    contenteditable="${isAdmin() ? 'true' : 'false'}" 
+                    class="editable" 
+                    data-id="${question.id}" 
+                    data-field="question"
+                >${question.question}</td>
+                <td 
+                    contenteditable="${isAdmin() ? 'true' : 'false'}" 
+                    class="editable" 
+                    data-id="${question.id}" 
+                    data-field="answer"
+                >${question.answer || 'Chưa có câu trả lời'}</td>
+                <td>${question.contributor}</td>
+                <td>
+                    ${question.status === 'pending' ? '<span class="pending-label">(Chờ Duyệt)</span>' : ''}
+                    <button class="approve-button" data-id="${question.id}">Duyệt</button>
+                    <button class="delete-button" data-id="${question.id}">Xóa</button>
+                </td>
+            `;
+            questionList.appendChild(row);
+        });
+
+        // Thêm sự kiện cho các ô chỉnh sửa và nút hành động
+        addEventListeners();
+    }
+
+    // Hàm kiểm tra quyền admin
+    function isAdmin() {
+        return sessionStorage.getItem('role') === 'admin';
+    }
+
+    // Hàm thêm sự kiện cho các ô chỉnh sửa và nút hành động
+    function addEventListeners() {
+        // Sự kiện cho các ô chỉnh sửa
+        document.querySelectorAll('.editable').forEach(cell => {
+            cell.addEventListener('blur', function () {
+                const id = this.getAttribute('data-id');
+                const field = this.getAttribute('data-field');
+                const value = this.textContent.trim();
+
+                if (value !== this.dataset.originalValue) {
+                    updateQuestion(id, field, value);
+                }
+            });
+
+            // Lưu giá trị ban đầu để so sánh khi blur
+            cell.dataset.originalValue = cell.textContent.trim();
+        });
+
+        // Sự kiện cho nút Duyệt
+        document.querySelectorAll('.approve-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                approveQuestion(id);
+            });
+        });
+
+        // Sự kiện cho nút Xóa
+        document.querySelectorAll('.delete-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                deleteQuestion(id);
+            });
         });
     }
-    fetch('/qa-system/noimon.php', { // Hoặc '/qa-system/noimon.php'
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            console.error('Server responded with status:', response.status);
-            throw new Error('Network response was not ok');
-        }
-        return response.text(); // Nhận phản hồi dưới dạng text
-    })
-    .then(text => {
-        console.log('Raw response:', text); // Kiểm tra phản hồi thô
-        try {
-            const data = JSON.parse(text); // Thử parse JSON
-            console.log('Parsed data:', data);
-        } catch (error) {
-            console.error('Phản hồi không phải là JSON:', text);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+
+    // Hàm duyệt câu hỏi
+    function approveQuestion(id) {
+        fetch('noimon.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `approve_id=${id}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Câu hỏi đã được duyệt thành công!');
+                loadQuestions(); // Tải lại danh sách câu hỏi
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Hàm xóa câu hỏi
+    function deleteQuestion(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) return;
+
+        fetch('noimon.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `delete_id=${id}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Câu hỏi đã bị xóa thành công!');
+                loadQuestions(); // Tải lại danh sách câu hỏi
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Hàm cập nhật câu hỏi hoặc đáp án
+    function updateQuestion(id, field, value) {
+        fetch('noimon.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `update_field=true&id=${id}&field=${field}&value=${encodeURIComponent(value)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Cập nhật thành công!');
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Tải danh sách câu hỏi khi trang được tải
+    loadQuestions();
 });
+
+document.getElementById('search-input').addEventListener('input', function () {
+    const keyword = this.value.trim();
+    if (keyword.length > 0) {
+        fetch(`search.php?keyword=${encodeURIComponent(keyword)}`)
+            .then(response => response.json())
+            .then(data => {
+                // Cập nhật kết quả tìm kiếm vào bảng
+                updateQuestionTable(data);
+            })
+            .catch(error => console.error('Lỗi tìm kiếm:', error));
+    } else {
+        // Nếu không có từ khóa, hiển thị toàn bộ câu hỏi
+        fetchAllQuestions();
+    }
+});
+
+function updateQuestionTable(questions) {
+    const tableBody = document.querySelector('.question-table tbody');
+    tableBody.innerHTML = ''; // Xóa nội dung cũ
+    questions.forEach(question => {
+        const row = `
+            <tr>
+                <td>${question.id}</td>
+                <td>${question.question}</td>
+                <td>${question.answer || 'Chưa có câu trả lời.'}</td>
+                <td class="center-align">${question.contributor}</td>
+                <td>${question.status === 'pending' ? '(Chờ Duyệt)' : ''}</td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    });
+}
