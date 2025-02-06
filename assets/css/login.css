@@ -1,0 +1,108 @@
+/* Reset CSS */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1c1c1c; /* Màu nền đen tối */
+    color: #ffffff; /* Màu chữ trắng */
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Center container */
+.center-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+
+/* Intro text */
+.intro-text {
+    margin-bottom: 40px;
+    font-size: 18px;
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.intro-text .white-text {
+    color: #ffffff; /* Màu trắng cho dòng đầu tiên */
+}
+
+.intro-text .highlight {
+    font-size: 28px; /* Làm nổi bật chữ "BỔ THIÊN CÁC" */
+    font-weight: bold;
+    color: #d9c893; /* Màu vàng nhạt */
+    margin-top: 10px; /* Khoảng cách giữa hai dòng */
+}
+
+/* Subtext trong box đăng nhập */
+.subtext {
+    font-size: 16px;
+    color: #d9c893; /* Màu vàng nhạt */
+    margin-bottom: 20px;
+}
+
+/* Auth box */
+.auth-box {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff; /* Màu chữ trắng */
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: #d9c893; /* Màu viền khi focus */
+    box-shadow: 0 0 10px rgba(217, 200, 147, 0.5);
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #d9c893, #b8a07e);
+    color: #1c1c1c; /* Màu chữ trên nút */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: linear-gradient(135deg, #b8a07e, #d9c893);
+    box-shadow: 0 0 20px rgba(217, 200, 147, 0.7);
+}
+
+.error {
+    color: #ff4d4d; /* Màu đỏ cho lỗi */
+    margin-bottom: 15px;
+}

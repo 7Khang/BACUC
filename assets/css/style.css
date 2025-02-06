@@ -1,0 +1,68 @@
+/* Login container */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    margin-top: 50px;
+    padding: 20px;
+}
+
+/* Login and register boxes */
+.login-box, .register-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-box h2, .register-box h2 {
+    text-align: center;
+    color: #0073aa;
+    margin-bottom: 20px;
+}
+
+/* Input fields */
+.login-box input, .register-box input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+
+.login-box button:hover, .register-box button:hover {
+    background-color: #005177;
+}
+
+/* Error and success messages */
+.error {
+    color: red;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.success {
+    color: green;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+
+/* Định dạng phần logo */
+.logo {
+    display: flex; /* Sắp xếp logo và văn bản theo chiều ngang */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    gap: 15px; /* Khoảng cách giữa logo và văn bản */
+}
+
+/* Định dạng hình logo */
+.logo-image {
+    width: 60px; /* Chiều rộng của logo */
+    height: auto; /* Tự động điều chỉnh chiều cao */
+
+}
