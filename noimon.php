@@ -144,11 +144,11 @@ function fetchQuestions($pdo) {
         END,
         question ASC
     ";
-
     if (($_SESSION['role'] ?? '') !== 'admin') {
         $current_user = $_SESSION['username'] ?? 'Ẩn danh';
         $query = "
-            SELECT * FROM questions
+            SELECT id, question, answer, contributor, status
+            FROM questions
             WHERE status = 'approved' OR contributor = :current_user
             ORDER BY 
             CASE 
@@ -158,7 +158,6 @@ function fetchQuestions($pdo) {
             question ASC
         ";
     }
-
     $stmt = $pdo->prepare($query);
     if (($_SESSION['role'] ?? '') !== 'admin') {
         $stmt->execute([':current_user' => $current_user]);

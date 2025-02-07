@@ -4,7 +4,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Hàm tải danh sách câu hỏi
     function loadQuestions() {
         fetch('noimon.php')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     renderQuestions(data.data); // Hiển thị danh sách câu hỏi
@@ -18,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Hàm hiển thị danh sách câu hỏi lên bảng
     function renderQuestions(questions) {
         questionList.innerHTML = ''; // Xóa dữ liệu cũ
-
         if (questions.length === 0) {
             questionList.innerHTML = '<tr><td colspan="5">Không có câu hỏi nào hiện tại.</td></tr>';
             return;
@@ -40,11 +44,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     data-id="${question.id}" 
                     data-field="answer"
                 >${question.answer || 'Chưa có câu trả lời'}</td>
-                <td>${question.contributor}</td>
+                <td class="center-align">${question.contributor}</td>
                 <td>
                     ${question.status === 'pending' ? '<span class="pending-label">(Chờ Duyệt)</span>' : ''}
-                    <button class="approve-button" data-id="${question.id}">Duyệt</button>
-                    <button class="delete-button" data-id="${question.id}">Xóa</button>
+                    ${isAdmin() ? `
+                        <button class="approve-button" data-id="${question.id}">Duyệt</button>
+                        <button class="delete-button" data-id="${question.id}">Xóa</button>
+                    ` : ''}
                 </td>
             `;
             questionList.appendChild(row);
@@ -61,36 +67,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Hàm thêm sự kiện cho các ô chỉnh sửa và nút hành động
     function addEventListeners() {
-        // Sự kiện cho các ô chỉnh sửa
-        document.querySelectorAll('.editable').forEach(cell => {
-            cell.addEventListener('blur', function () {
-                const id = this.getAttribute('data-id');
-                const field = this.getAttribute('data-field');
-                const value = this.textContent.trim();
+        // Sử dụng event delegation để xử lý sự kiện
+        document.addEventListener('click', function (event) {
+            const target = event.target;
 
-                if (value !== this.dataset.originalValue) {
+            // Xử lý nút Duyệt
+            if (target.classList.contains('approve-button')) {
+                const id = target.getAttribute('data-id');
+                approveQuestion(id);
+            }
+
+            // Xử lý nút Xóa
+            if (target.classList.contains('delete-button')) {
+                const id = target.getAttribute('data-id');
+                deleteQuestion(id);
+            }
+        });
+
+        document.addEventListener('blur', function (event) {
+            const target = event.target;
+
+            // Xử lý chỉnh sửa nội dung
+            if (target.classList.contains('editable')) {
+                const id = target.getAttribute('data-id');
+                const field = target.getAttribute('data-field');
+                const value = target.textContent.trim();
+                if (value !== target.dataset.originalValue) {
                     updateQuestion(id, field, value);
                 }
-            });
+            }
+        }, true);
 
-            // Lưu giá trị ban đầu để so sánh khi blur
+        // Lưu giá trị ban đầu để so sánh khi blur
+        document.querySelectorAll('.editable').forEach(cell => {
             cell.dataset.originalValue = cell.textContent.trim();
-        });
-
-        // Sự kiện cho nút Duyệt
-        document.querySelectorAll('.approve-button').forEach(button => {
-            button.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                approveQuestion(id);
-            });
-        });
-
-        // Sự kiện cho nút Xóa
-        document.querySelectorAll('.delete-button').forEach(button => {
-            button.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                deleteQuestion(id);
-            });
         });
     }
 
@@ -103,7 +113,12 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: `approve_id=${id}`
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('Câu hỏi đã được duyệt thành công!');
@@ -126,7 +141,12 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: `delete_id=${id}`
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('Câu hỏi đã bị xóa thành công!');
@@ -147,7 +167,12 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: `update_field=true&id=${id}&field=${field}&value=${encodeURIComponent(value)}`
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('Cập nhật thành công!');
@@ -158,39 +183,60 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(error => console.error('Error:', error));
     }
 
+    // Sự kiện tìm kiếm
+    document.getElementById('search-input').addEventListener('input', function () {
+        const keyword = this.value.trim();
+        if (keyword.length > 0) {
+            fetch(`search.php?keyword=${encodeURIComponent(keyword)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateQuestionTable(data);
+                })
+                .catch(error => console.error('Lỗi tìm kiếm:', error));
+        } else {
+            fetchAllQuestions();
+        }
+    });
+
+    // Hàm lấy toàn bộ câu hỏi
+    function fetchAllQuestions() {
+        fetch('fetch_questions.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateQuestionTable(data);
+            })
+            .catch(error => console.error('Lỗi tải câu hỏi:', error));
+    }
+
+    // Hàm cập nhật bảng câu hỏi
+    function updateQuestionTable(questions) {
+        const tableBody = document.querySelector('.question-table tbody');
+        tableBody.innerHTML = ''; // Xóa nội dung cũ
+
+        questions.forEach((question, index) => {
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${question.question}</td>
+                    <td>${question.answer || 'Chưa có câu trả lời.'}</td>
+                    <td class="center-align">${question.contributor}</td>
+                    ${isAdmin() ? `<td>${question.status === 'pending' ? '(Chờ Duyệt)' : ''}</td>` : ''}
+                </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', row);
+        });
+    }
+
     // Tải danh sách câu hỏi khi trang được tải
     loadQuestions();
 });
-
-document.getElementById('search-input').addEventListener('input', function () {
-    const keyword = this.value.trim();
-    if (keyword.length > 0) {
-        fetch(`search.php?keyword=${encodeURIComponent(keyword)}`)
-            .then(response => response.json())
-            .then(data => {
-                // Cập nhật kết quả tìm kiếm vào bảng
-                updateQuestionTable(data);
-            })
-            .catch(error => console.error('Lỗi tìm kiếm:', error));
-    } else {
-        // Nếu không có từ khóa, hiển thị toàn bộ câu hỏi
-        fetchAllQuestions();
-    }
-});
-
-function updateQuestionTable(questions) {
-    const tableBody = document.querySelector('.question-table tbody');
-    tableBody.innerHTML = ''; // Xóa nội dung cũ
-    questions.forEach(question => {
-        const row = `
-            <tr>
-                <td>${question.id}</td>
-                <td>${question.question}</td>
-                <td>${question.answer || 'Chưa có câu trả lời.'}</td>
-                <td class="center-align">${question.contributor}</td>
-                <td>${question.status === 'pending' ? '(Chờ Duyệt)' : ''}</td>
-            </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', row);
-    });
-}
