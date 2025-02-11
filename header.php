@@ -1,11 +1,14 @@
 <?php
-
 // Kiểm tra xem người dùng đã đăng nhập chưa
 if (!isset($_SESSION['role'])) {
     // Nếu chưa đăng nhập, chuyển hướng về trang đăng nhập
     header("Location: login.php");
     exit;
 }
+
+// Xác định vai trò người dùng
+$is_admin = ($_SESSION['role'] ?? '') === 'admin';
+
 ?>
 
 <!DOCTYPE html>

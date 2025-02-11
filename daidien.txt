@@ -1,0 +1,158 @@
+<?php
+session_start();
+require 'db.php';
+include 'header.php';
+?>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đại Điện Bổ Thiên Các</title>
+    <link rel="stylesheet" href="assets/css/daidien.css">
+    <link rel="stylesheet" href="assets/css/Responsive.css">
+    <script src="assets/js/sweetalert211.js"></script>
+    <script src="assets/js/script.js" defer></script>
+</head>
+<body>
+<!-- Hero Section -->
+<div class="hero-section">
+    <video autoplay muted loop id="hero-video">
+        <source src="https://img.pikbest.com/best/01/01/90/648132113624d.mp4" type="video/mp4">
+    </video>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <h3>Chào mừng đạo hữu <?php echo htmlspecialchars($_SESSION['username'] ?? 'Ẩn danh'); ?> đến với</h3>
+        <h1>ĐẠI ĐIỆN CỦA BỔ THIÊN CÁC</h1>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Phần Khoáng Mạch và Group Tông Môn -->
+    <div class="split-container">
+        <div class="section khoang-mach" id="khoang-mach">
+            <h2>KHOÁNG MẠCH</h2>
+            <p>Tiến vào mỏ khoáng TIỂU THIÊN U CẢNH</p>
+            <a href="#" class="button">TRUY CẬP KHOÁNG MẠCH</a>
+        </div>
+        <div class="section group-tong-mon" id="group-tong-mon">
+            <h2>GROUP TÔNG MÔN</h2>
+            <p>Tham gia cộng đồng để giao lưu và học hỏi</p>
+            <a href="https://zalo.me/g/rpujcs731" class="button">ẤN ĐỂ VÀO GROUP ZALO</a>
+        </div>
+    </div>
+    <!-- Phần Bộ Đáp Án Câu Hỏi Vấn Đáp -->
+    <div class="section van-dap" id="van-dap">
+        <h2>BỘ ĐÁP ÁN CÂU HỎI VẤN ĐÁP</h2>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Nhập từ khóa để tìm đáp án nhanh...">
+        </div>
+        <h3>DANH SÁCH CÂU HỎI VẤN ĐÁP</h3>
+        <table class="question-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Câu Hỏi</th>
+                    <th>Câu Trả Lời</th>
+                    <th>Người Đóng Góp</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Câu hỏi mẫu 1</td>
+                    <td>Đáp án mẫu 1</td>
+                    <td class="center-align">Người đóng góp 1</td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="approve_id" value="1">
+                            <button type="submit" class="approve-button">Duyệt</button>
+                        </form>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="delete_id" value="1">
+                            <button type="submit" class="delete-button">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Câu hỏi mẫu 2</td>
+                    <td>Chưa có câu trả lời.</td>
+                    <td class="center-align">Người đóng góp 2</td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="delete_id" value="2">
+                            <button type="submit" class="delete-button">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="add-question-toggle">
+            <button id="toggle-add-question">BỔ SUNG THÊM CÂU HỎI CHƯA CÓ</button>
+        </div>
+        <div class="add-question-container" id="add-question-container" style="display: none;">
+            <form id="add-question-form" method="POST" action="" class="add-question-form">
+                <div class="form-group">
+                    <label for="question">Câu Hỏi:</label>
+                    <input 
+                        type="text" 
+                        name="question" 
+                        id="question" 
+                        placeholder="Mời đạo hữu nhập câu hỏi vào đây..." 
+                        required 
+                        maxlength="255"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="answer">Đáp Án:</label>
+                    <input 
+                        type="text" 
+                        name="answer" 
+                        id="answer" 
+                        placeholder="Mời đạo hữu nhập đáp án vào đây..." 
+                        required 
+                        maxlength="255"
+                    >
+                </div>
+                <button type="submit" name="add_question" class="submit-button">BỔ SUNG</button>
+            </form>
+        </div>
+    </div>
+    <!-- Hiển thị bảng xếp hạng -->
+    <div class="leaderboard">
+        <h2>CÔNG THẦN BẢNG</h2>
+        <div class="podium-container">
+            <div class="podium-item rank-1" data-contributor="Người đóng góp 1">
+                <div class="rank">Hạng 1</div>
+                <div class="contributor">
+                    <h3>Người đóng góp 1</h3>
+                    <p>10 câu hỏi</p>
+                </div>
+            </div>
+            <div class="podium-item rank-2" data-contributor="Người đóng góp 2">
+                <div class="rank">Hạng 2</div>
+                <div class="contributor">
+                    <h3>Người đóng góp 2</h3>
+                    <p>8 câu hỏi</p>
+                </div>
+            </div>
+            <div class="podium-item rank-3" data-contributor="Người đóng góp 3">
+                <div class="rank">Hạng 3</div>
+                <div class="contributor">
+                    <h3>Người đóng góp 3</h3>
+                    <p>6 câu hỏi</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    <p>&copy; 2025 Bổ Thiên Các. All rights reserved.</p>
+</div>
+</body>
+</html>

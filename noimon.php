@@ -1,13 +1,18 @@
 <?php
 session_start();
-require_once 'db.php'; // Kết nối cơ sở dữ liệu
+require 'db.php'; // Kết nối cơ sở dữ liệu
 
-// Kiểm tra quyền admin
+// Xác định vai trò người dùng
 $is_admin = ($_SESSION['role'] ?? '') === 'admin';
 
-/**
- * Hàm thêm câu hỏi mới
- */
+// Kiểm tra kết nối cơ sở dữ liệu
+try {
+    $pdo->query("SELECT 1");
+} catch (Exception $e) {
+    die("Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($e->getMessage()));
+}
+
+// Xử lý thêm câu hỏi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question'])) {
     $question = trim($_POST['question']);
     $answer = trim($_POST['answer']);
@@ -15,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question'])) {
 
     if (!empty($question)) {
         try {
+            // Thêm câu hỏi vào cơ sở dữ liệu với trạng thái "pending"
             $stmt = $pdo->prepare("
                 INSERT INTO questions (question, answer, contributor, status)
                 VALUES (:question, :answer, :contributor, 'pending')
@@ -25,74 +31,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question'])) {
                 ':contributor' => $contributor
             ]);
 
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'message' => 'Câu hỏi đã được gửi và đang chờ admin duyệt.',
-                'data' => [
-                    'id' => $pdo->lastInsertId(),
-                    'question' => $question,
-                    'answer' => $answer,
-                    'contributor' => $contributor,
-                    'status' => 'pending'
-                ]
-            ]);
-            exit;
+            // Lưu thông báo thành công vào session
+            $_SESSION['message'] = "Câu hỏi đã được gửi và đang chờ admin duyệt.";
+            $_SESSION['message_type'] = 'success';
         } catch (Exception $e) {
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => false,
-                'message' => 'Lỗi khi thêm câu hỏi: ' . htmlspecialchars($e->getMessage())
-            ]);
-            exit;
+            // Lưu thông báo lỗi vào session
+            $_SESSION['message'] = "Lỗi khi thêm câu hỏi: " . htmlspecialchars($e->getMessage());
+            $_SESSION['message_type'] = 'error';
         }
     } else {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'message' => 'Vui lòng nhập câu hỏi.'
-        ]);
-        exit;
+        // Lưu thông báo lỗi nếu câu hỏi trống
+        $_SESSION['message'] = "Vui lòng nhập câu hỏi.";
+        $_SESSION['message_type'] = 'error';
     }
+
+    // Chuyển hướng về trang chính để tránh gửi lại form
+    header("Location: daidien.php");
+    exit;
 }
 
-// Hàm duyệt câu hỏi
+// Xử lý duyệt câu hỏi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_id'])) {
-    if ($_SESSION['role'] !== 'admin') {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'message' => 'Bạn không có quyền thực hiện hành động duyệt.'
-        ]);
-        exit;
+    if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+        $_SESSION['message'] = "Bạn không có quyền thực hiện hành động duyệt.";
+        $_SESSION['message_type'] = 'error';
+    } else {
+        $approveId = $_POST['approve_id'];
+        $stmt = $pdo->prepare("UPDATE questions SET status = 'approved' WHERE id = :id");
+        $stmt->execute([':id' => $approveId]);
+
+        $_SESSION['message'] = "Câu hỏi đã được duyệt thành công!";
+        $_SESSION['message_type'] = 'success';
     }
-    $approveId = $_POST['approve_id'];
-    $stmt = $pdo->prepare("UPDATE questions SET status = 'approved' WHERE id = :id");
-    $stmt->execute([':id' => $approveId]);
-    echo "Câu hỏi đã được duyệt thành công!";
+
+    // Chuyển hướng về trang chính
+    header("Location: daidien.php");
     exit;
 }
 
-// Hàm xóa câu hỏi
+/**
+ * Hàm xử lý xóa câu hỏi
+ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
-    if ($_SESSION['role'] !== 'admin') {
+    $deleteId = $_POST['delete_id'];
+
+    try {
+        // Thực hiện xóa câu hỏi
+        $stmt = $pdo->prepare("DELETE FROM questions WHERE id = :id");
+        $stmt->execute([':id' => $deleteId]);
+
+        // Trả về thông báo thành công
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => 'Câu hỏi đã bị xóa thành công!'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        // Trả về thông báo lỗi nếu có
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
-            'message' => 'Bạn không có quyền thực hiện hành động xóa.'
+            'message' => 'Lỗi khi xóa câu hỏi: ' . htmlspecialchars($e->getMessage())
         ]);
         exit;
     }
-    $deleteId = $_POST['delete_id'];
-    $stmt = $pdo->prepare("DELETE FROM questions WHERE id = :id");
-    $stmt->execute([':id' => $deleteId]);
-    echo "Câu hỏi đã bị xóa thành công!";
-    exit;
 }
 
-// Hàm sửa câu hỏi
+/**
+ * Hàm xử lý chỉnh sửa câu hỏi hoặc đáp án
+ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
-    if ($_SESSION['role'] !== 'admin') {
+    if (!$is_admin) {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
@@ -100,184 +110,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
         ]);
         exit;
     }
+
     $edit_id = $_POST['edit_id'];
-    $edit_question = trim($_POST['edit_question']);
-    $edit_answer = trim($_POST['edit_answer']);
-    if (empty($edit_question)) {
-        echo "Vui lòng nhập câu hỏi.";
-    } else {
-        try {
-            $stmt = $pdo->prepare("SELECT id FROM questions WHERE id = :id");
-            $stmt->execute([':id' => $edit_id]);
-            $existingQuestion = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$existingQuestion) {
-                echo "Câu hỏi không tồn tại.";
-                exit;
-            }
-            $stmt = $pdo->prepare("
-                UPDATE questions
-                SET question = :question, answer = :answer
-                WHERE id = :id
-            ");
-            $stmt->execute([
-                ':question' => htmlspecialchars($edit_question),
-                ':answer' => htmlspecialchars($edit_answer),
-                ':id' => $edit_id
-            ]);
-            echo "Câu hỏi đã được cập nhật thành công!";
-        } catch (Exception $e) {
-            echo "Lỗi khi cập nhật câu hỏi: " . htmlspecialchars($e->getMessage());
-        }
-    }
-}
+    $edit_field = isset($_POST['question']) ? 'question' : 'answer';
+    $edit_value = trim($_POST[$edit_field]);
 
-/**
- * Hàm lấy danh sách câu hỏi
- */
-function fetchQuestions($pdo) {
-    $query = "
-        SELECT * FROM questions
-        ORDER BY 
-        CASE 
-        WHEN status = 'pending' THEN 0 
-        ELSE 1 
-        END,
-        question ASC
-    ";
-    if (($_SESSION['role'] ?? '') !== 'admin') {
-        $current_user = $_SESSION['username'] ?? 'Ẩn danh';
-        $query = "
-            SELECT id, question, answer, contributor, status
-            FROM questions
-            WHERE status = 'approved' OR contributor = :current_user
-            ORDER BY 
-            CASE 
-            WHEN status = 'pending' THEN 0 
-            ELSE 1 
-            END,
-            question ASC
-        ";
-    }
-    $stmt = $pdo->prepare($query);
-    if (($_SESSION['role'] ?? '') !== 'admin') {
-        $stmt->execute([':current_user' => $current_user]);
-    } else {
-        $stmt->execute();
-    }
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-/**
- * Hàm lấy top 3 người đóng góp
- */
-function fetchTopContributors($pdo) {
-    $stmt = $pdo->query("
-        SELECT 
-        contributor, 
-        COUNT(*) AS total_contributions
-        FROM 
-        questions
-        WHERE 
-        contributor != 'Ẩn danh'
-        GROUP BY 
-        contributor
-        ORDER BY 
-        total_contributions DESC
-        LIMIT 3
-    ");
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-// Trả về danh sách câu hỏi dưới dạng JSON
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => true,
-        'data' => fetchQuestions($pdo)
-    ]);
-    exit;
-}
-
-if (isset($_GET['keyword'])) {
-    $keyword = trim($_GET['keyword']);
-    if (!empty($keyword)) {
-        // Truy vấn cơ sở dữ liệu để tìm câu hỏi chứa từ khóa
-        $query = "
-            SELECT * FROM questions
-            WHERE question LIKE :keyword
-            ORDER BY 
-            CASE 
-            WHEN status = 'pending' THEN 0 
-            ELSE 1 
-            END,
-            question ASC
-        ";
-        if (($_SESSION['role'] ?? '') !== 'admin') {
-            $current_user = $_SESSION['username'] ?? 'Ẩn danh';
-            $query = "
-                SELECT * FROM questions
-                WHERE (question LIKE :keyword) AND (status = 'approved' OR contributor = :current_user)
-                ORDER BY 
-                CASE 
-                WHEN status = 'pending' THEN 0 
-                ELSE 1 
-                END,
-                question ASC
-            ";
-        }
-        $stmt = $pdo->prepare($query);
-        if (($_SESSION['role'] ?? '') !== 'admin') {
-            $stmt->execute([':keyword' => "%$keyword%", ':current_user' => $current_user]);
-        } else {
-            $stmt->execute([':keyword' => "%$keyword%"]);
-        }
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Trả về kết quả dưới dạng JSON
+    if (empty($edit_value)) {
         header('Content-Type: application/json');
-        echo json_encode($results);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Vui lòng nhập nội dung.'
+        ]);
+        exit;
+    }
+
+    try {
+        // Kiểm tra câu hỏi có tồn tại không
+        $stmt = $pdo->prepare("SELECT id FROM questions WHERE id = :id");
+        $stmt->execute([':id' => $edit_id]);
+        $existingQuestion = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$existingQuestion) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Câu hỏi không tồn tại.'
+            ]);
+            exit;
+        }
+
+        // Cập nhật trường tương ứng
+        $stmt = $pdo->prepare("
+            UPDATE questions
+            SET {$edit_field} = :value
+            WHERE id = :id
+        ");
+        $stmt->execute([
+            ':value' => htmlspecialchars($edit_value),
+            ':id' => $edit_id
+        ]);
+        exit;
+    } catch (Exception $e) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Lỗi khi cập nhật: ' . htmlspecialchars($e->getMessage())
+        ]);
         exit;
     }
 }
 
-// Nếu không có từ khóa, trả về danh sách câu hỏi mặc định
-header('Content-Type: application/json');
-echo json_encode(fetchQuestions($pdo));
-exit;
-
-/**
- * Hàm lấy danh sách câu hỏi
- */
-function fetchQuestions($pdo) {
-    $query = "
-        SELECT * FROM questions
-        ORDER BY 
-        CASE 
-        WHEN status = 'pending' THEN 0 
-        ELSE 1 
-        END,
-        question ASC
-    ";
-    if (($_SESSION['role'] ?? '') !== 'admin') {
-        $current_user = $_SESSION['username'] ?? 'Ẩn danh';
-        $query = "
-            SELECT * FROM questions
-            WHERE status = 'approved' OR contributor = :current_user
-            ORDER BY 
-            CASE 
-            WHEN status = 'pending' THEN 0 
-            ELSE 1 
-            END,
-            question ASC
-        ";
-    }
-    $stmt = $pdo->prepare($query);
-    if (($_SESSION['role'] ?? '') !== 'admin') {
-        $stmt->execute([':current_user' => $current_user]);
-    } else {
-        $stmt->execute();
-    }
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
 ?>
-
