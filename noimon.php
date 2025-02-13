@@ -50,23 +50,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question'])) {
     exit;
 }
 
-// Xử lý duyệt câu hỏi
+/**
+ * Hàm duyệt câu hỏi
+ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_id'])) {
-    if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
-        $_SESSION['message'] = "Bạn không có quyền thực hiện hành động duyệt.";
-        $_SESSION['message_type'] = 'error';
-    } else {
-        $approveId = $_POST['approve_id'];
+    $approveId = $_POST['approve_id'];
+    try {
+        // Cập nhật trạng thái câu hỏi thành "approved"
         $stmt = $pdo->prepare("UPDATE questions SET status = 'approved' WHERE id = :id");
         $stmt->execute([':id' => $approveId]);
 
-        $_SESSION['message'] = "Câu hỏi đã được duyệt thành công!";
-        $_SESSION['message_type'] = 'success';
+        // Trả về thông báo thành công
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => 'Câu hỏi đã được duyệt thành công!'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        // Trả về thông báo lỗi nếu có
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Lỗi khi duyệt câu hỏi: ' . htmlspecialchars($e->getMessage())
+        ]);
+        exit;
     }
-
-    // Chuyển hướng về trang chính
-    header("Location: daidien.php");
-    exit;
 }
 
 /**

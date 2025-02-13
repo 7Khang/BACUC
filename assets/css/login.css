@@ -5,14 +5,31 @@
     box-sizing: border-box;
 }
 
+/* Gradient Animation cho nền login */
 body {
-    background-color: #1c1c1c; /* Màu nền đen tối */
+    background: linear-gradient(135deg, #3f3c38, #121110, #020202);
+    background-size: 300% 300%; /* Kéo dài gradient để tạo hiệu ứng di chuyển */
+    animation: gradientAnimation 5s ease infinite; /* Áp dụng animation */
+    line-height: 1.6;
     color: #ffffff; /* Màu chữ trắng */
     font-family: Arial, sans-serif;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+/* Keyframes cho gradient animation */
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 /* Center container */
@@ -105,4 +122,92 @@ button:hover {
 .error {
     color: #ff4d4d; /* Màu đỏ cho lỗi */
     margin-bottom: 15px;
+}
+
+/* Định dạng container chứa logo */
+.logo-container {
+    text-align: center; /* Căn giữa nội dung */
+    margin-bottom: 20px; /* Khoảng cách với phần tiếp theo */
+}
+
+/* Định dạng logo */
+.logo {
+    max-width: 150px; /* Giới hạn chiều rộng tối đa */
+    height: auto; /* Giữ tỷ lệ khung hình */
+    margin: 0 auto; /* Căn giữa theo chiều ngang */
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Giảm kích thước font chữ */
+    body {
+        font-size: 14px;
+    }
+
+    /* Thu nhỏ intro text */
+    .intro-text {
+        font-size: 16px;
+    }
+
+    .intro-text .highlight {
+        font-size: 24px;
+    }
+
+    /* Thu nhỏ auth box */
+    .auth-box {
+        padding: 20px;
+        max-width: 300px;
+    }
+
+    /* Giảm kích thước input và button */
+    input {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    button {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .logo {
+        max-width: 120px; /* Thu nhỏ logo trên màn hình nhỏ */
+    }
+}
+@media (max-width: 480px) {
+    /* Giảm kích thước font chữ */
+    body {
+        font-size: 12px;
+    }
+
+    /* Thu nhỏ intro text */
+    .intro-text {
+        font-size: 14px;
+    }
+
+    .intro-text .highlight {
+        font-size: 20px;
+    }
+
+    /* Thu nhỏ auth box */
+    .auth-box {
+        padding: 15px;
+        max-width: 300px;
+    }
+
+    /* Giảm kích thước input và button */
+    input {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    button {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .logo {
+        max-width: 100px; /* Thu nhỏ hơn nữa trên màn hình rất nhỏ */
+    }
 }

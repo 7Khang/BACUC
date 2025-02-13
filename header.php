@@ -18,7 +18,9 @@ $is_admin = ($_SESSION['role'] ?? '') === 'admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? $page_title : 'Bổ Thiên Các'; ?></title>
     <link rel="stylesheet" href="assets/css/Responsive.css">
+    <link rel="stylesheet" href="assets/css/Daidien.css">
     <link rel="stylesheet" href="assets/css/header.css">
+    <script src="assets/js/script.js" defer></script> <!-- Liên kết đến file script.js -->
 </head>
 <body>
 

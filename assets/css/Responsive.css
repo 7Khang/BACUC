@@ -79,3 +79,26 @@
     font-size: 12px; /* Giảm kích thước chữ */
     }
 }
+
+/* Hiển thị menu khi kích hoạt class 'active' */
+@media (max-width: 768px) {
+    .menu ul {
+        display: none; /* Ẩn menu mặc định trên màn hình nhỏ */
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.8);
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .menu ul.active {
+        display: flex; /* Hiển thị menu khi có class 'active' */
+        z-index: 999;
+    }
+
+    .hamburger {
+        display: flex; /* Hiển thị hamburger menu trên màn hình nhỏ */
+    }
+}

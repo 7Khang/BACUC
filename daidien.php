@@ -2,7 +2,7 @@
 session_start(); // Khởi tạo session
 require 'db.php'; // Kết nối cơ sở dữ liệu
 include 'header.php'; // Đảm bảo header.php chứa các thành phần cần thiết như kết nối DB và session.
-
+$is_admin = ($_SESSION['role'] ?? '') === 'admin';
 // Hàm lấy danh sách câu hỏi
 function fetchQuestions($pdo) {
     $query = "
@@ -68,7 +68,6 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="assets/css/daidien.css">
     <link rel="stylesheet" href="assets/css/Responsive.css">
     <script src="assets/js/script.js" defer></script> <!-- Liên kết đến file script.js -->
-    
 </head>
 <body>
 <!-- Hero Section -->
@@ -91,12 +90,14 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="section khoang-mach" id="khoang-mach">
             <h2>KHOÁNG MẠCH</h2>
             <p>Tiến vào mỏ khoáng TIỂU THIÊN U CẢNH</p>
+            <p>Tính năng đang phát triển...</p>
             <a href="#" class="button">TRUY CẬP KHOÁNG MẠCH</a>
         </div>
         <!-- Phần Group Tông Môn -->
         <div class="section group-tong-mon" id="group-tong-mon">
             <h2>GROUP TÔNG MÔN</h2>
             <p>Tham gia cộng đồng để giao lưu và học hỏi</p>
+            <p>Tính năng đang phát triển...</p>
             <a href="https://zalo.me/g/rpujcs731" class="button">ẤN ĐỂ VÀO GROUP ZALO</a>
         </div>
     </div>
@@ -135,12 +136,13 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php foreach ($questions as $index => $question): ?>
                     <tr data-id="<?= htmlspecialchars($question['id']) ?>">
                         <td class="serial-number"><?= $index + 1 ?></td>
-                        <td 
-                            class="editable" 
-                            data-field="question" 
-                            contenteditable="<?= $is_admin ? 'true' : 'false' ?>"
-                        >
-                            <?= htmlspecialchars($question['question']) ?>
+                        <td style="position: relative;">
+                            <?php if ($question['status'] === 'pending'): ?>
+                                <span class="pending-label">Chờ Duyệt</span>
+                            <?php endif; ?>
+                            <span contenteditable="true" class="editable" data-field="question">
+                                <?= htmlspecialchars($question['question']) ?>
+                            </span>
                         </td>
                         <td 
                             class="editable" 
@@ -151,18 +153,14 @@ $top_contributors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </td>
                         <td class="center-align"><?= htmlspecialchars($question['contributor']) ?></td>
                         <?php if ($is_admin): ?>
-                            <td>
-                                <?php if ($question['status'] === 'pending'): ?>
-                                    <span class="pending-label">Chờ Duyệt</span>
-                                <?php endif; ?>
-                                <form method="POST" action="noimon.php" style="display:inline;">
+                            <td class="actions">
                                     <input type="hidden" name="approve_id" value="<?= $question['id'] ?>">
-                                    <button type="submit" class="approve-button">Duyệt</button>
-                                </form>
-                                <form method="POST" action="noimon.php" style="display:inline;">
+                                    <?php if ($question['status'] === 'pending'): ?>
+                                        <button class="approve-button" data-id="<?= htmlspecialchars($question['id']) ?>">Duyệt</button>
+                                    <?php endif; ?>
+
                                     <input type="hidden" name="delete_id" value="<?= $question['id'] ?>">
                                     <button class="delete-button" data-id="<?= htmlspecialchars($question['id']) ?>">Xóa</button>
-                                </form>
                             </td>
                         <?php endif; ?>
                     </tr>

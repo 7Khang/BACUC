@@ -41,34 +41,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!-- Liên kết CSS -->
-<link rel="stylesheet" href="assets/css/login.css">
 
-<div class="center-container">
-    <!-- Phần văn bản mở đầu -->
-    <div class="intro-text">
-        <p class="white-text">ĐẠO HỮU ĐANG BƯỚC VÀO LINH MÔN CỦA</p>
-        <p class="highlight">BỔ THIÊN CÁC</p>
-    </div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Bổ Thiên Các</title>
+    <link rel="stylesheet" href="assets/css/login.css">
+</head>
+<body>
+    <div class="center-container">
+        <!-- Logo -->
+        <div class="logo-container">
+            <img src="assets/img/logo btc.png" alt="Logo Bổ Thiên Các" class="logo">
+        </div>
 
-    <!-- Box đăng nhập -->
-    <div class="auth-box">
-        <p class="subtext">HÃY ĐỂ LẠI CAO DANH QUÝ TÍNH</p>
-        <?php if (isset($login_error)): ?>
-            <p class="error"><?php echo htmlspecialchars($login_error); ?></p>
-        <?php endif; ?>
+        <!-- Phần văn bản mở đầu -->
+        <div class="intro-text">
+            <p class="white-text">ĐẠO HỮU ĐANG BƯỚC VÀO LINH MÔN CỦA</p>
+            <p class="highlight">BỔ THIÊN CÁC</p>
+        </div>
 
-        <form method="POST" action="">
-            <!-- Ô nhập tên người dùng -->
-            <input type="text" name="username" placeholder="NHẬP CAO DANH QUÝ TÍNH" required 
-                   value="<?php echo htmlspecialchars($_SESSION['saved_username'] ?? ''); ?>">
-
-            <!-- Ô mật khẩu (hiển thị nếu tên người dùng là admin) -->
-            <?php if (isset($show_password)): ?>
-                <input type="password" name="password" placeholder="Mật khẩu" required>
+        <!-- Box đăng nhập -->
+        <div class="auth-box">
+            <p class="subtext">HÃY ĐỂ LẠI CAO DANH QUÝ TÍNH</p>
+            <?php if (isset($login_error)): ?>
+                <p class="error"><?php echo htmlspecialchars($login_error); ?></p>
             <?php endif; ?>
-
-            <button type="submit">TIẾN VÀO NỘI MÔN</button>
-        </form>
+            <form method="POST" action="">
+                <!-- Ô nhập tên người dùng -->
+                <input type="text" name="username" placeholder="NHẬP CAO DANH QUÝ TÍNH" required 
+                       value="<?php echo htmlspecialchars($_SESSION['saved_username'] ?? ''); ?>">
+                <!-- Ô mật khẩu (hiển thị nếu tên người dùng là admin) -->
+                <?php if (isset($show_password)): ?>
+                    <input type="password" name="password" placeholder="Mật khẩu" required>
+                <?php endif; ?>
+                <button type="submit">TIẾN VÀO NỘI MÔN</button>
+            </form>
+        </div>
     </div>
-</div>
+</body>
+</html>
